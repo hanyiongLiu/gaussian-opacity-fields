@@ -1,6 +1,7 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import torch
 from scene import Scene
-import os
 from os import makedirs
 from gaussian_renderer import render, integrate
 import random

@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16.3)
 project(fast_traversal LANGUAGES CXX CUDA)
 enable_language(CUDA)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
 include(FetchContent)
 # Add paths to our CMake code to the module path, so they can be found automatically by
 # CMake.
@@ -61,7 +66,7 @@ pybind11_add_module(tetranerf_cpp_extension
 
 target_link_libraries(tetranerf_cpp_extension PRIVATE ${CUDA_LIBRARIES} ${TORCH_LIBRARIES})
 target_link_libraries(tetranerf_cpp_extension PRIVATE CGAL::CGAL)
-target_compile_features(tetranerf_cpp_extension PRIVATE cxx_std_17)
+# target_compile_features(tetranerf_cpp_extension PRIVATE cxx_std_17)
 set_target_properties(tetranerf_cpp_extension
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

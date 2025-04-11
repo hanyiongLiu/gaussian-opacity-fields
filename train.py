@@ -10,6 +10,7 @@
 #
 
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import numpy as np
 import open3d as o3d
 import cv2
