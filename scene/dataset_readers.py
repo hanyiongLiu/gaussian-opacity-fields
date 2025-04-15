@@ -29,6 +29,10 @@ class CameraInfo(NamedTuple):
     T: np.array
     FovY: np.array
     FovX: np.array
+    focal_length_x: np.array
+    focal_length_y: np.array
+    cx: np.array
+    cy: np.array
     image: np.array
     image_path: str
     image_name: str
@@ -83,12 +87,16 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         T = np.array(extr.tvec)
 
         if intr.model=="SIMPLE_PINHOLE":
-            focal_length_x = intr.params[0]
-            FovY = focal2fov(focal_length_x, height)
+            focal_length_y = focal_length_x = intr.params[0]
+            FovY = focal2fov(focal_length_y, height)
             FovX = focal2fov(focal_length_x, width)
+            cx = width / 2
+            cy = height / 2
         elif intr.model=="PINHOLE":
             focal_length_x = intr.params[0]
             focal_length_y = intr.params[1]
+            cx = intr.params[2]
+            cy = intr.params[3]
             FovY = focal2fov(focal_length_y, height)
             FovX = focal2fov(focal_length_x, width)
         else:
@@ -103,8 +111,9 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         
         image = Image.open(image_path)
 
-        cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-                              image_path=image_path, image_name=image_name, width=width, height=height)
+        cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, 
+                              focal_length_x=focal_length_x, focal_length_y=focal_length_y, cx=cx, cy=cy, 
+                              image=image, image_path=image_path, image_name=image_name, width=width, height=height)
         cam_infos.append(cam_info)
     sys.stdout.write('\n')
     return cam_infos
@@ -134,6 +143,30 @@ def storePly(path, xyz, rgb):
     ply_data = PlyData([vertex_element])
     ply_data.write(path)
 
+def generate_pcd_from_3dbbox(bbox_path):
+    if not os.path.exists(bbox_path):
+        raise FileNotFoundError(f"Bounding box file {bbox_path} does not exist.")
+    
+    bbox = [] # min_x, min_y, min_z, max_x, max_y, max_z
+    with open(bbox_path, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            bbox.append(float(line.strip()))
+
+    if len(bbox) != 6:
+        raise ValueError(f"Invalid bounding box format in {bbox_path}. Expected 6 values.")
+    
+    num_points = int(10*(bbox[3]-bbox[0])*(bbox[4]-bbox[1])*(bbox[5]-bbox[2]))
+    xyzs = np.empty((num_points, 3))
+    rgbs = np.empty((num_points, 3))
+    # Generate uniform random points within the bounding box
+    xyzs[:, 0] = np.random.uniform(bbox[0], bbox[3], num_points)  # x values between min_x and max_x
+    xyzs[:, 1] = np.random.uniform(bbox[1], bbox[4], num_points)  # y values between min_y and max_y
+    xyzs[:, 2] = np.random.uniform(bbox[2], bbox[5], num_points)  # z values between min_z and max_z
+    # Generate random colors
+    rgbs[:] = 128 * np.ones((num_points, 3))
+    return xyzs, rgbs
+  
 def readColmapSceneInfo(path, images, eval, llffhold=8):
     try:
         cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.bin")
@@ -162,6 +195,11 @@ def readColmapSceneInfo(path, images, eval, llffhold=8):
     ply_path = os.path.join(path, "sparse/0/points3D.ply")
     bin_path = os.path.join(path, "sparse/0/points3D.bin")
     txt_path = os.path.join(path, "sparse/0/points3D.txt")
+    bbox_path = os.path.join(path, "sparse/0/scene_bbox.txt")
+    if not os.path.exists(bin_path) and not os.path.exists(txt_path) and os.path.exists(bbox_path):
+        print("No point3D.bin or point3D.txt found, generating pcd from the 3d bounding box")
+        xyz, rgb = generate_pcd_from_3dbbox(bbox_path)
+        storePly(ply_path, xyz, rgb)
     if not os.path.exists(ply_path):
         print("Converting point3d.bin to .ply, will happen only the first time you open the scene.")
         try:

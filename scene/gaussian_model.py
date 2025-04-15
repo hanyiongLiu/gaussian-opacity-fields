@@ -238,8 +238,8 @@ class GaussianModel:
             x, y, z = xyz_cam[:, 0], xyz_cam[:, 1], xyz_cam[:, 2]
             z = torch.clamp(z, min=0.001)
             
-            x = x / z * camera.focal_x + camera.image_width / 2.0
-            y = y / z * camera.focal_y + camera.image_height / 2.0
+            x = x / z * camera.focal_x + camera.cx
+            y = y / z * camera.focal_y + camera.cy
             
             # in_screen = torch.logical_and(torch.logical_and(x >= 0, x < camera.image_width), torch.logical_and(y >= 0, y < camera.image_height))
             
@@ -590,6 +590,14 @@ class GaussianModel:
         selected_pts_mask = torch.logical_or(selected_pts_mask, selected_pts_mask_abs)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(self.get_scaling, dim=1).values > self.percent_dense*scene_extent)
+        # # only keep the points in the 3d bounding box
+        # xyz = self.get_xyz
+        # mask_bbox = (
+        #     (xyz[:, 0] >= 9.703025963321199) & (xyz[:, 0] <= 19.172725383251386) &
+        #     (xyz[:, 1] >= 44.1334967188742) & (xyz[:, 1] <= 47.942414216400536) &
+        #     (xyz[:, 2] >= 11.980873114386114) & (xyz[:, 2] <= 19.646781)
+        # )
+        # selected_pts_mask = torch.logical_or(selected_pts_mask, ~mask_bbox)
 
         stds = self.get_scaling[selected_pts_mask].repeat(N,1)
         means =torch.zeros((stds.size(0), 3),device="cuda")

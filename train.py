@@ -10,7 +10,7 @@
 #
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import numpy as np
 import open3d as o3d
 import cv2
@@ -123,7 +123,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
     for iteration in range(first_iter, opt.iterations + 1):        
-
         iter_start.record()
 
         gaussians.update_learning_rate(iteration)
@@ -268,7 +267,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 if iteration < opt.iterations - 100:
                     # don't update in the end of training
                     gaussians.compute_3D_filter(cameras=trainCameras)
-        
+                memory_usage = torch.cuda.memory_reserved(0)/1E9
+                print("torch.cuda.memory_reserved: ", memory_usage, "(GB)")
+                
             # Optimizer step
             if iteration < opt.iterations:
                 gaussians.optimizer.step()
@@ -348,8 +349,8 @@ if __name__ == "__main__":
     lp = ModelParams(parser)
     op = OptimizationParams(parser)
     pp = PipelineParams(parser)
-    parser.add_argument('--ip', type=str, default="127.0.0.1")
-    parser.add_argument('--port', type=int, default=6009)
+    parser.add_argument('--ip', type=str, default="0.0.0.0")
+    parser.add_argument('--port', type=int, default=6012)
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
     parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
