@@ -128,6 +128,14 @@ def marching_tetrahedra_with_binary_search(model_path, name, iteration, views, g
     
 
 def extract_mesh(dataset : ModelParams, iteration : int, pipeline : PipelineParams, filter_mesh : bool, texture_mesh : bool):
+    # copy bbox text to the model place
+    bbox_txt_path = os.path.join(dataset.source_path, "sparse", "0", "scene_bbox.txt")
+    cp_bbox_txt_path = os.path.join(dataset.model_path, "point_cloud", f"iteration_{iteration}", "scene_bbox.txt")
+    if os.path.exists(bbox_txt_path):
+        # copy bbox text to the model place using shutil
+        import shutil
+        shutil.copy(bbox_txt_path, cp_bbox_txt_path)
+    
     with torch.no_grad():
         gaussians = GaussianModel(dataset.sh_degree)
         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)

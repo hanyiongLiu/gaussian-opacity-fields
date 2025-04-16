@@ -156,13 +156,15 @@ def generate_pcd_from_3dbbox(bbox_path):
     if len(bbox) != 6:
         raise ValueError(f"Invalid bounding box format in {bbox_path}. Expected 6 values.")
     
-    num_points = int(10*(bbox[3]-bbox[0])*(bbox[4]-bbox[1])*(bbox[5]-bbox[2]))
+    # num_points = int(5*(bbox[3]-bbox[0])*(bbox[4]-bbox[1])*(bbox[5]-bbox[2]))
+    num_points = 5000
     xyzs = np.empty((num_points, 3))
     rgbs = np.empty((num_points, 3))
     # Generate uniform random points within the bounding box
     xyzs[:, 0] = np.random.uniform(bbox[0], bbox[3], num_points)  # x values between min_x and max_x
     xyzs[:, 1] = np.random.uniform(bbox[1], bbox[4], num_points)  # y values between min_y and max_y
-    xyzs[:, 2] = np.random.uniform(bbox[2], bbox[5], num_points)  # z values between min_z and max_z
+    r = np.random.uniform(0, 1, num_points)
+    xyzs[:, 2] = bbox[2] + (bbox[5] - bbox[2]) * (r ** 3)  # z values biased towards the lower end
     # Generate random colors
     rgbs[:] = 128 * np.ones((num_points, 3))
     return xyzs, rgbs

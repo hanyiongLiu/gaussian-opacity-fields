@@ -469,6 +469,35 @@ class GaussianModel:
         for idx, attr_name in enumerate(rot_names):
             rots[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
+        # remain Gaussians in the bbox region
+        bbox_txt = os.path.join(os.path.dirname(path), "scene_bbox.txt")
+        if os.path.exists(bbox_txt):
+            print("Loading bbox from : ", bbox_txt)
+            bbox = [] # min_x, min_y, min_z, max_x, max_y, max_z
+            with open(bbox_txt, 'r') as f:
+                lines = f.readlines()
+                for line in lines:
+                    bbox.append(float(line.strip()))
+            if len(bbox) != 6:
+                raise ValueError("Invalid bbox file format")
+            bbox = np.array(bbox, dtype=np.float32)
+            mask = np.logical_and.reduce((
+                xyz[:, 0] >= bbox[0],
+                xyz[:, 1] >= bbox[1],
+                xyz[:, 2] >= bbox[2],
+                xyz[:, 0] <= bbox[3],
+                xyz[:, 1] <= bbox[4],
+                xyz[:, 2] <= bbox[5]
+            ))
+            # keep the points in the bbox
+            xyz = xyz[mask]
+            opacities = opacities[mask]
+            features_dc = features_dc[mask]
+            features_extra = features_extra[mask]
+            scales = scales[mask]
+            rots = rots[mask]
+            filter_3D = filter_3D[mask]   
+        
         self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
         self._features_dc = nn.Parameter(torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(True))
         self._features_rest = nn.Parameter(torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(True))
