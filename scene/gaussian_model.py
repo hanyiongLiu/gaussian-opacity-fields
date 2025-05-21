@@ -481,6 +481,15 @@ class GaussianModel:
             if len(bbox) != 6:
                 raise ValueError("Invalid bbox file format")
             bbox = np.array(bbox, dtype=np.float32)
+            
+            # enlarge bbox 10% 
+            bbox[0] -= 0.1 * (bbox[3] - bbox[0])
+            bbox[1] -= 0.1 * (bbox[4] - bbox[1])
+            bbox[2] -= 0.1 * (bbox[5] - bbox[2])
+            bbox[3] += 0.1 * (bbox[3] - bbox[0])
+            bbox[4] += 0.1 * (bbox[4] - bbox[1])
+            bbox[5] += 0.1 * (bbox[5] - bbox[2])
+            
             mask = np.logical_and.reduce((
                 xyz[:, 0] >= bbox[0],
                 xyz[:, 1] >= bbox[1],

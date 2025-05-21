@@ -23,7 +23,7 @@ class Camera(nn.Module):
 
         self.uid = uid
         self.colmap_id = colmap_id
-        self.R = R
+        self.R = R # c2w
         self.T = T
         self.FoVx = FoVx
         self.FoVy = FoVy
@@ -57,7 +57,7 @@ class Camera(nn.Module):
         self.trans = trans
         self.scale = scale
 
-        self.world_view_transform = torch.tensor(getWorld2View2(R, T, trans, scale)).transpose(0, 1).cuda()
+        self.world_view_transform = torch.tensor(getWorld2View2(R, T, trans, scale)).transpose(0, 1).cuda() #w2c.transpose
         # self.projection_matrix = getProjectionMatrix(znear=self.znear, zfar=self.zfar, fovX=self.FoVx, fovY=self.FoVy).transpose(0,1).cuda()
         self.projection_matrix = getProjectionMatrixShift(znear=self.znear, zfar=self.zfar, 
                                                           focal_x=self.focal_x, focal_y=self.focal_y, cx=self.cx, cy=self.cy,

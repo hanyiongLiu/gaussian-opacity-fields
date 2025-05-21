@@ -83,7 +83,7 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         width = intr.width
 
         uid = intr.id
-        R = np.transpose(qvec2rotmat(extr.qvec))
+        R = np.transpose(qvec2rotmat(extr.qvec)) # c2w
         T = np.array(extr.tvec)
 
         if intr.model=="SIMPLE_PINHOLE":
@@ -157,14 +157,18 @@ def generate_pcd_from_3dbbox(bbox_path):
         raise ValueError(f"Invalid bounding box format in {bbox_path}. Expected 6 values.")
     
     # num_points = int(5*(bbox[3]-bbox[0])*(bbox[4]-bbox[1])*(bbox[5]-bbox[2]))
-    num_points = 5000
+    num_points = 1000
     xyzs = np.empty((num_points, 3))
     rgbs = np.empty((num_points, 3))
     # Generate uniform random points within the bounding box
-    xyzs[:, 0] = np.random.uniform(bbox[0], bbox[3], num_points)  # x values between min_x and max_x
-    xyzs[:, 1] = np.random.uniform(bbox[1], bbox[4], num_points)  # y values between min_y and max_y
+    x_range = bbox[3] - bbox[0]
+    y_range = bbox[4] - bbox[1]
+    
+    # Sample x values from the middle 75% of the range
+    xyzs[:, 0] = np.random.uniform(bbox[0] + x_range * 0.125, bbox[3] - x_range * 0.125, num_points)
+    xyzs[:, 1] = np.random.uniform(bbox[1] + y_range * 0.125, bbox[4] - y_range * 0.125, num_points)
     r = np.random.uniform(0, 1, num_points)
-    xyzs[:, 2] = bbox[2] + (bbox[5] - bbox[2]) * (r ** 3)  # z values biased towards the lower end
+    xyzs[:, 2] = bbox[2] + 0.3 * (bbox[5] - bbox[2]) * (r ** 3)  # z values biased towards the lower end
     # Generate random colors
     rgbs[:] = 128 * np.ones((num_points, 3))
     return xyzs, rgbs
